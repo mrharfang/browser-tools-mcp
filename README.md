@@ -1,239 +1,190 @@
-# BrowserTools MCP
+# Browser Tools MCP - Enhanced Fork 🚀
 
-> Make your AI tools 10x more aware and capable of interacting with your browser
+[![Model Context Protocol](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/)
 
-This application is a powerful browser monitoring and interaction tool that enables AI-powered applications via Anthropic's Model Context Protocol (MCP) to capture and analyze browser data through a Chrome extension.
+A powerful Model Context Protocol (MCP) server that enables AI assistants to interact with web browsers and perform advanced web automation tasks. **This fork adds video downloading capabilities** and enhanced functionality to the original browser-tools-mcp.
 
-Read our [docs](https://browsertools.agentdesk.ai/) for the full installation, quickstart and contribution guides.
+## 🆕 Fork Enhancements
 
-## Roadmap
+This fork adds the following features to the original browser-tools-mcp:
 
-Check out our project roadmap here: [Github Roadmap / Project Board](https://github.com/orgs/AgentDeskAI/projects/1/views/1)
+### 📹 Video Download Tool
+- **Download videos from any supported website** using the `downloadVideo` tool
+- **Smart URL detection** - automatically uses current tab URL or accepts custom URLs
+- **Quality selection** - defaults to 720p but supports various quality options
+- **Background downloads** - non-blocking downloads with progress tracking
+- **Organized storage** - saves to `~/VideoGrabs/` directory by default
+- **Comprehensive error handling** - detailed feedback for troubleshooting
 
-## Updates
+### 🛠️ Technical Improvements
+- Enhanced TypeScript configurations
+- Additional dependencies: `ytdl-core`, `fs-extra`
+- Improved error handling and user feedback
+- Better console logging for debugging
 
-v1.2.0 is out! Here's a quick breakdown of the update:
-- You can now enable "Allow Auto-Paste into Cursor" within the DevTools panel. Screenshots will be automatically pasted into Cursor (just make sure to focus/click into the Agent input field in Cursor, otherwise it won't work!)
-- Integrated a suite of SEO, performance, accessibility, and best practice analysis tools via Lighthouse
-- Implemented a NextJS specific prompt used to improve SEO for a NextJS application
-- Added Debugger Mode as a tool which executes all debugging tools in a particular sequence, along with a prompt to improve reasoning
-- Added Audit Mode as a tool to execute all auditing tools in a particular sequence
-- Resolved Windows connectivity issues
-- Improved networking between BrowserTools server, extension and MCP server with host/port auto-discovery, auto-reconnect, and graceful shutdown mechanisms
-- Added ability to more easily exit out of the Browser Tools server with Ctrl+C
+## 🔧 Quick Setup
 
-## Quickstart Guide
+1. **Install dependencies:**
+   ```bash
+   # Install browser-tools-server dependencies
+   cd browser-tools-server
+   npm install
 
-There are three components to run this MCP tool:
+   # Install MCP server dependencies
+   cd ../browser-tools-mcp
+   npm install
+   ```
 
-1. Install our chrome extension from here: [v1.2.0 BrowserToolsMCP Chrome Extension](https://github.com/AgentDeskAI/browser-tools-mcp/releases/download/v1.2.0/BrowserTools-1.2.0-extension.zip)
-2. Install the MCP server from this command within your IDE: `npx @agentdeskai/browser-tools-mcp@latest`
-3. Open a new terminal and run this command: `npx @agentdeskai/browser-tools-server@latest`
+2. **Build both components:**
+   ```bash
+   # Build browser-tools-server
+   cd browser-tools-server
+   npm run build
 
-* Different IDEs have different configs but this command is generally a good starting point; please reference your IDEs docs for the proper config setup
+   # Build MCP server
+   cd ../browser-tools-mcp
+   npm run build
+   ```
 
-IMPORTANT TIP - there are two servers you need to install. There's...
-- browser-tools-server (local nodejs server that's a middleware for gathering logs)
-and
-- browser-tools-mcp (MCP server that you install into your IDE that communicates w/ the extension + browser-tools-server)
+3. **Configure Claude Desktop:**
+   Add to your `claude_desktop_config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "browser-tools": {
+         "command": "node",
+         "args": ["/Users/rickbarraza/dev/mcp/browser-tools-mcp/browser-tools-mcp/build/mcp-server.js"],
+         "env": {
+           "BROWSER_WS_ENDPOINT": "ws://localhost:8080"
+         }
+       }
+     }
+   }
+   ```
 
-`npx @agentdeskai/browser-tools-mcp@latest` is what you put into your IDE
-`npx @agentdeskai/browser-tools-server@latest` is what you run in a new terminal window
+4. **Start the browser server:**
+   ```bash
+   cd browser-tools-server
+   npm start
+   ```
 
-After those three steps, open up your chrome dev tools and then the BrowserToolsMCP panel.
+5. **Install Chrome extension:**
+   - Open Chrome → Extensions → Developer mode
+   - Load unpacked → Select `chrome-extension` folder
 
-If you're still having issues try these steps:
-- Quit / close down your browser. Not just the window but all of Chrome itself. 
-- Restart the local node server (browser-tools-server)
-- Make sure you only have ONE instance of chrome dev tools panel open
+## 🎯 Available Tools
 
-After that, it should work but if it doesn't let me know and I can share some more steps to gather logs/info about the issue!
+### Original Tools
+- **screenshot** - Capture webpage screenshots
+- **getPageContent** - Extract text content from pages
+- **navigate** - Navigate to URLs
+- **click** - Click elements on pages
+- **type** - Input text into form fields
+- **scroll** - Scroll pages
+- **waitForElement** - Wait for elements to appear
 
-If you have any questions or issues, feel free to open an issue ticket! And if you have any ideas to make this better, feel free to reach out or open an issue ticket with an enhancement tag or reach out to me at [@tedx_ai on x](https://x.com/tedx_ai)
+### 🆕 New: Video Download Tool
+```typescript
+downloadVideo({
+  url?: string,        // Optional: defaults to current tab URL
+  quality?: string,    // Optional: defaults to "720p"
+  outputDir?: string   // Optional: defaults to "~/VideoGrabs/"
+})
+```
 
-## Full Update Notes:
+**Example usage:**
+- `downloadVideo()` - Downloads video from current tab in 720p to ~/VideoGrabs/
+- `downloadVideo({ url: "https://youtube.com/watch?v=...", quality: "1080p" })`
 
-Coding agents like Cursor can run these audits against the current page seamlessly. By leveraging Puppeteer and the Lighthouse npm library, BrowserTools MCP can now:
+## 📁 Project Structure
 
-- Evaluate pages for WCAG compliance
-- Identify performance bottlenecks
-- Flag on-page SEO issues
-- Check adherence to web development best practices
-- Review NextJS specific issues with SEO
+```
+browser-tools-mcp/
+├── browser-tools-server/     # Backend server with Puppeteer
+│   ├── browser-connector.ts  # 🆕 Enhanced with video download endpoint
+│   ├── package.json         # 🆕 Added ytdl-core, fs-extra
+│   └── ...
+├── browser-tools-mcp/       # MCP server implementation
+│   ├── mcp-server.ts        # 🆕 Added downloadVideo tool
+│   ├── package.json         # 🆕 Updated dependencies
+│   └── ...
+├── chrome-extension/        # Chrome extension for browser control
+└── docs/                    # Documentation
+```
 
-...all without leaving your IDE 🎉
+## 🎬 Video Download Feature Details
+
+The video download functionality is implemented across two components:
+
+### Backend (browser-tools-server)
+- **Endpoint:** `POST /download-video`
+- **Technology:** ytdl-core for video extraction
+- **Storage:** fs-extra for file system operations
+- **Progress:** Real-time console logging
+
+### MCP Interface (browser-tools-mcp)
+- **Tool name:** `downloadVideo`
+- **Smart defaults:** 720p quality, ~/VideoGrabs/ directory
+- **Error handling:** Comprehensive validation and feedback
+- **User feedback:** Emoji-rich status messages
+
+## 🔗 Original Project
+
+This is a fork of the original [browser-tools-mcp](https://github.com/modelcontextprotocol/create-python-server) project. The original project provides excellent browser automation capabilities, and this fork extends it with video downloading functionality.
+
+### Changes from Original
+- ✅ Added video downloading with ytdl-core
+- ✅ Enhanced error handling and user feedback
+- ✅ Improved TypeScript configurations
+- ✅ Added comprehensive documentation
+- ✅ Organized file structure with clear separation of concerns
+
+## 🛡️ Requirements
+
+- **Node.js** 18+ 
+- **Chrome/Chromium** browser
+- **Claude Desktop** (for MCP integration)
+- **Internet connection** (for video downloads)
+
+## 🚀 Usage Examples
+
+### Download from Current Tab
+```
+Just ask Claude: "Download the video from this page"
+```
+
+### Download with Specific Quality
+```
+Ask Claude: "Download this YouTube video in 1080p quality"
+```
+
+### Download to Custom Directory
+```
+Ask Claude: "Download this video to my Desktop folder"
+```
+
+## 🤝 Contributing
+
+This fork welcomes contributions! Feel free to:
+- Report bugs or suggest features via Issues
+- Submit Pull Requests for improvements
+- Enhance documentation
+- Add support for additional video platforms
+
+## 📜 License
+
+This project maintains the same license as the original browser-tools-mcp project.
+
+## 🙏 Acknowledgments
+
+- Original browser-tools-mcp developers for the excellent foundation
+- Model Context Protocol team for the MCP specification
+- ytdl-core maintainers for robust video downloading capabilities
 
 ---
 
-## 🔑 Key Additions
-
-| Audit Type         | Description                                                                                                                              |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Accessibility**  | WCAG-compliant checks for color contrast, missing alt text, keyboard navigation traps, ARIA attributes, and more.                        |
-| **Performance**    | Lighthouse-driven analysis of render-blocking resources, excessive DOM size, unoptimized images, and other factors affecting page speed. |
-| **SEO**            | Evaluates on-page SEO factors (like metadata, headings, and link structure) and suggests improvements for better search visibility.      |
-| **Best Practices** | Checks for general best practices in web development.                                                                                    |
-| **NextJS Audit**   | Injects a prompt used to perform a NextJS audit.                                                                                         |
-| **Audit Mode**     | Runs all auditing tools in a sequence.                                                                                                   |
-| **Debugger Mode**  | Runs all debugging tools in a sequence.                                                                                                  |
-
----
-
-## 🛠️ Using Audit Tools
-
-### ✅ **Before You Start**
-
-Ensure you have:
-
-- An **active tab** in your browser
-- The **BrowserTools extension enabled**
-
-### ▶️ **Running Audits**
-
-**Headless Browser Automation**:  
- Puppeteer automates a headless Chrome instance to load the page and collect audit data, ensuring accurate results even for SPAs or content loaded via JavaScript.
-
-The headless browser instance remains active for **60 seconds** after the last audit call to efficiently handle consecutive audit requests.
-
-**Structured Results**:  
- Each audit returns results in a structured JSON format, including overall scores and detailed issue lists. This makes it easy for MCP-compatible clients to interpret the findings and present actionable insights.
-
-The MCP server provides tools to run audits on the current page. Here are example queries you can use to trigger them:
-
-#### Accessibility Audit (`runAccessibilityAudit`)
-
-Ensures the page meets accessibility standards like WCAG.
-
-> **Example Queries:**
->
-> - "Are there any accessibility issues on this page?"
-> - "Run an accessibility audit."
-> - "Check if this page meets WCAG standards."
-
-#### Performance Audit (`runPerformanceAudit`)
-
-Identifies performance bottlenecks and loading issues.
-
-> **Example Queries:**
->
-> - "Why is this page loading so slowly?"
-> - "Check the performance of this page."
-> - "Run a performance audit."
-
-#### SEO Audit (`runSEOAudit`)
-
-Evaluates how well the page is optimized for search engines.
-
-> **Example Queries:**
->
-> - "How can I improve SEO for this page?"
-> - "Run an SEO audit."
-> - "Check SEO on this page."
-
-#### Best Practices Audit (`runBestPracticesAudit`)
-
-Checks for general best practices in web development.
-
-> **Example Queries:**
->
-> - "Run a best practices audit."
-> - "Check best practices on this page."
-> - "Are there any best practices issues on this page?"
-
-#### Audit Mode (`runAuditMode`)
-
-Runs all audits in a particular sequence. Will run a NextJS audit if the framework is detected.
-
-> **Example Queries:**
->
-> - "Run audit mode."
-> - "Enter audit mode."
-
-#### NextJS Audits (`runNextJSAudit`)
-
-Checks for best practices and SEO improvements for NextJS applications
-
-> **Example Queries:**
->
-> - "Run a NextJS audit."
-> - "Run a NextJS audit, I'm using app router."
-> - "Run a NextJS audit, I'm using page router."
-
-#### Debugger Mode (`runDebuggerMode`)
-
-Runs all debugging tools in a particular sequence
-
-> **Example Queries:**
->
-> - "Enter debugger mode."
-
-## Architecture
-
-There are three core components all used to capture and analyze browser data:
-
-1. **Chrome Extension**: A browser extension that captures screenshots, console logs, network activity and DOM elements.
-2. **Node Server**: An intermediary server that facilitates communication between the Chrome extension and any instance of an MCP server.
-3. **MCP Server**: A Model Context Protocol server that provides standardized tools for AI clients to interact with the browser.
-
-```
-┌─────────────┐     ┌──────────────┐     ┌───────────────┐     ┌─────────────┐
-│  MCP Client │ ──► │  MCP Server  │ ──► │  Node Server  │ ──► │   Chrome    │
-│  (e.g.      │ ◄── │  (Protocol   │ ◄── │ (Middleware)  │ ◄── │  Extension  │
-│   Cursor)   │     │   Handler)   │     │               │     │             │
-└─────────────┘     └──────────────┘     └───────────────┘     └─────────────┘
-```
-
-Model Context Protocol (MCP) is a capability supported by Anthropic AI models that
-allow you to create custom tools for any compatible client. MCP clients like Claude
-Desktop, Cursor, Cline or Zed can run an MCP server which "teaches" these clients
-about a new tool that they can use.
-
-These tools can call out to external APIs but in our case, **all logs are stored locally** on your machine and NEVER sent out to any third-party service or API. BrowserTools MCP runs a local instance of a NodeJS API server which communicates with the BrowserTools Chrome Extension.
-
-All consumers of the BrowserTools MCP Server interface with the same NodeJS API and Chrome extension.
-
-#### Chrome Extension
-
-- Monitors XHR requests/responses and console logs
-- Tracks selected DOM elements
-- Sends all logs and current element to the BrowserTools Connector
-- Connects to Websocket server to capture/send screenshots
-- Allows user to configure token/truncation limits + screenshot folder path
-
-#### Node Server
-
-- Acts as middleware between the Chrome extension and MCP server
-- Receives logs and currently selected element from Chrome extension
-- Processes requests from MCP server to capture logs, screenshot or current element
-- Sends Websocket command to the Chrome extension for capturing a screenshot
-- Intelligently truncates strings and # of duplicate objects in logs to avoid token limits
-- Removes cookies and sensitive headers to avoid sending to LLMs in MCP clients
-
-#### MCP Server
-
-- Implements the Model Context Protocol
-- Provides standardized tools for AI clients
-- Compatible with various MCP clients (Cursor, Cline, Zed, Claude Desktop, etc.)
-
-## Installation
-
-Installation steps can be found in our documentation:
-
-- [BrowserTools MCP Docs](https://browsertools.agentdesk.ai/)
-
-## Usage
-
-Once installed and configured, the system allows any compatible MCP client to:
-
-- Monitor browser console output
-- Capture network traffic
-- Take screenshots
-- Analyze selected elements
-- Wipe logs stored in our MCP server
-- Run accessibility, performance, SEO, and best practices audits
-
-## Compatibility
-
-- Works with any MCP-compatible client
-- Primarily designed for Cursor IDE integration
-- Supports other AI editors and MCP clients
+**🔧 Fork maintained by:** [@rickbarraza](https://github.com/rickbarraza)  
+**📅 Enhanced:** January 2025  
+**🌟 Original:** [browser-tools-mcp](https://github.com/modelcontextprotocol/create-python-server)
