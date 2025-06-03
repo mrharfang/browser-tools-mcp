@@ -1424,6 +1424,89 @@ server.tool(
   }
 );
 
+// Add video download tool
+server.tool(
+  "downloadVideo",
+  "Download video from URL (defaults: 720p quality, saves to ~/VideoGrabs/)",
+  {},
+  async (args: any) => {
+    return await withServerConnection(async () => {
+      try {
+        const { url, quality = "720p", outputDir } = args;
+
+        console.log(
+          `Sending POST request to http://${discoveredHost}:${discoveredPort}/download-video`
+        );
+
+        const response = await fetch(
+          `http://${discoveredHost}:${discoveredPort}/download-video`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              url,
+              quality,
+              outputDir,
+              source: "mcp_tool",
+              timestamp: Date.now(),
+            }),
+          }
+        );
+
+        // Check for errors
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Server returned ${response.status}: ${errorText}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === "started") {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `✅ Video download started successfully!
+
+📹 Title: ${result.title}
+🔗 URL: ${result.url}
+💾 Quality: ${result.quality}
+📁 Output: ${result.outputPath}
+
+The download is running in the background. Use 'getConsoleLogs' to monitor progress.`,
+              },
+            ],
+          };
+        } else {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `❌ Download failed: ${result.message || "Unknown error"}`,
+              },
+            ],
+          };
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error("Error in downloadVideo tool:", errorMessage);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `❌ Failed to download video: ${errorMessage}`,
+            },
+          ],
+        };
+      }
+    });
+  }
+);
+
 // Start receiving messages on stdio
 (async () => {
   try {

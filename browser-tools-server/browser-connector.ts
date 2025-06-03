@@ -6,11 +6,13 @@ import bodyParser from "body-parser";
 import { tokenizeAndEstimateCost } from "llm-cost";
 import { WebSocketServer, WebSocket } from "ws";
 import fs from "fs";
+import fse from "fs-extra";
 import path from "path";
 import { IncomingMessage } from "http";
 import { Socket } from "net";
 import os from "os";
 import { exec } from "child_process";
+import ytdl from "ytdl-core";
 import {
   runPerformanceAudit,
   runAccessibilityAudit,
@@ -589,6 +591,141 @@ app.post("/current-url", (req, res) => {
 app.get("/current-url", (req, res) => {
   console.log("Current URL requested, returning:", currentUrl);
   res.json({ url: currentUrl });
+});
+
+// Add video download endpoint  
+app.post("/download-video", async (req: any, res: any) => {
+  try {
+    const { url, quality = "720p", outputDir } = req.body;
+    
+    // Determine the URL to download from
+    let videoUrl = url;
+    if (!videoUrl) {
+      // If no URL provided, try to use current tab URL
+      videoUrl = currentUrl;
+      if (!videoUrl) {
+        return res.status(400).json({ 
+          status: "error", 
+          message: "No URL provided and no current tab URL available" 
+        });
+      }
+    }
+
+    // Validate YouTube URL
+    if (!ytdl.validateURL(videoUrl)) {
+      return res.status(400).json({ 
+        status: "error", 
+        message: "Invalid YouTube URL provided" 
+      });
+    }
+
+    // Set up output directory
+    const homeDir = os.homedir();
+    const defaultOutputDir = path.join(homeDir, "VideoGrabs");
+    const finalOutputDir = outputDir || defaultOutputDir;
+    
+    // Ensure output directory exists
+    await fse.ensureDir(finalOutputDir);
+
+    // Get video info
+    const info = await ytdl.getInfo(videoUrl);
+    const videoTitle = info.videoDetails.title.replace(/[^\w\s-]/g, '').trim();
+    const filename = `${videoTitle}.mp4`;
+    const filepath = path.join(finalOutputDir, filename);
+
+    console.log(`Starting video download: ${videoTitle}`);
+    console.log(`Output path: ${filepath}`);
+
+    // Add to console logs for MCP visibility
+    consoleLogs.push({
+      level: "info",
+      message: `Video download started: ${videoTitle}`,
+      timestamp: Date.now(),
+      url: videoUrl,
+      source: "video-downloader"
+    });
+
+    // Start download in background
+    const downloadPromise = new Promise((resolve, reject) => {
+      const stream = ytdl(videoUrl, {
+        quality: 'highestvideo',
+        filter: 'audioandvideo'
+      });
+
+      const writeStream = fs.createWriteStream(filepath);
+      
+      stream.pipe(writeStream);
+      
+      stream.on('progress', (chunkLength: number, downloaded: number, total: number) => {
+        const percent = ((downloaded / total) * 100).toFixed(1);
+        console.log(`Download progress: ${percent}% - ${videoTitle}`);
+        
+        // Add progress to console logs every 10%
+        if (downloaded % Math.floor(total / 10) < chunkLength) {
+          consoleLogs.push({
+            level: "info",
+            message: `Download progress: ${percent}% - ${videoTitle}`,
+            timestamp: Date.now(),
+            url: videoUrl,
+            source: "video-downloader"
+          });
+        }
+      });
+
+      writeStream.on('finish', () => {
+        console.log(`Download completed: ${filepath}`);
+        consoleLogs.push({
+          level: "info",
+          message: `Video download completed: ${videoTitle} saved to ${filepath}`,
+          timestamp: Date.now(),
+          url: videoUrl,
+          source: "video-downloader"
+        });
+        resolve(filepath);
+      });
+
+      stream.on('error', (error: Error) => {
+        console.error(`Download error: ${error.message}`);
+        consoleErrors.push({
+          level: "error",
+          message: `Video download failed: ${error.message}`,
+          timestamp: Date.now(),
+          url: videoUrl,
+          source: "video-downloader"
+        });
+        reject(error);
+      });
+    });
+
+    // Return immediate response
+    res.json({
+      status: "started",
+      message: `Video download started: ${videoTitle}`,
+      title: videoTitle,
+      url: videoUrl,
+      outputPath: filepath,
+      quality: quality
+    });
+
+    // Continue download in background
+    downloadPromise.catch((error: Error) => {
+      console.error("Background download failed:", error);
+    });
+
+  } catch (error: any) {
+    console.error("Video download endpoint error:", error);
+    consoleErrors.push({
+      level: "error",
+      message: `Video download error: ${error.message}`,
+      timestamp: Date.now(),
+      source: "video-downloader"
+    });
+    
+    res.status(500).json({
+      status: "error",
+      message: error.message || "Unknown error occurred during video download"
+    });
+  }
 });
 
 interface ScreenshotMessage {
